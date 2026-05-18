@@ -1,4 +1,4 @@
-module github.com/yuin/goldmark-highlighting/v2
+module github.com/Kodecable/fork-goldmark-highlighting/v2
 
 go 1.22
 
