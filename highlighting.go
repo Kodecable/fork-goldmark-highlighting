@@ -485,7 +485,7 @@ func (r *HTMLRenderer) renderFencedCodeBlock(w util.BufWriter, source []byte, no
 	if language != nil {
 		lexer = lexers.Get(string(language))
 	}
-	if !nohl && (lexer != nil || r.GuessLanguage) {
+	if !nohl {
 		if style == nil {
 			style = styles.Fallback
 		}
@@ -497,11 +497,16 @@ func (r *HTMLRenderer) renderFencedCodeBlock(w util.BufWriter, source []byte, no
 		}
 
 		if lexer == nil {
-			lexer = lexers.Analyse(buffer.String())
-			if lexer == nil {
+			if r.GuessLanguage {
+				lexer = lexers.Analyse(buffer.String())
+				if lexer == nil {
+					lexer = lexers.Fallback
+				}
+				language = []byte(strings.ToLower(lexer.Config().Name))
+			} else {
 				lexer = lexers.Fallback
+				language = []byte("text")
 			}
-			language = []byte(strings.ToLower(lexer.Config().Name))
 		}
 		lexer = chroma.Coalesce(lexer)
 

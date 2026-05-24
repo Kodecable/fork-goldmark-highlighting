@@ -172,10 +172,10 @@ func main() {
 
 	if strings.TrimSpace(buffer.String()) != strings.TrimSpace(`
 <h1>Title</h1>
-<pre><code>func main() {
-    fmt.Println(&quot;ok&quot;)
-}
-</code></pre>
+<pre style="background-color:#f7f7f7;-webkit-text-size-adjust:none;"><code><span style="display:flex;"><span>func main() {
+</span></span><span style="display:flex;"><span>    fmt.Println(&#34;ok&#34;)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre>
 `) {
 		t.Error("failed to render HTML")
 	}
