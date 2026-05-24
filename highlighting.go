@@ -370,6 +370,7 @@ func NewHTMLRenderer(opts ...Option) renderer.NodeRenderer {
 // RegisterFuncs implements NodeRenderer.RegisterFuncs.
 func (r *HTMLRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	reg.Register(ast.KindFencedCodeBlock, r.renderFencedCodeBlock)
+	reg.Register(ast.KindCodeBlock, r.renderCodeBlock)
 }
 
 func getAttributes(node *ast.FencedCodeBlock, infostr []byte) ImmutableAttributes {
@@ -554,6 +555,42 @@ func (r *HTMLRenderer) renderFencedCodeBlock(w util.BufWriter, source []byte, no
 	if r.WrapperRenderer != nil {
 		r.WrapperRenderer(w, c, false)
 	} else {
+		_, _ = w.WriteString("</code></pre>\n")
+	}
+	return ast.WalkContinue, nil
+}
+
+func (r *HTMLRenderer) renderCodeBlock(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
+	if !entering {
+		return ast.WalkContinue, nil
+	}
+	n := node.(*ast.CodeBlock)
+
+	style := r.CustomStyle
+	if style == nil {
+		style = styles.Get(r.Style)
+	}
+	if style == nil {
+		style = styles.Fallback
+	}
+
+	var buffer bytes.Buffer
+	l := n.Lines().Len()
+	for i := 0; i < l; i++ {
+		line := n.Lines().At(i)
+		buffer.Write(line.Value(source))
+	}
+
+	lexer := chroma.Coalesce(lexers.Fallback)
+	iterator, err := lexer.Tokenise(nil, buffer.String())
+	if err == nil {
+		chromaFormatterOptions := make([]chromahtml.Option, len(r.FormatOptions))
+		copy(chromaFormatterOptions, r.FormatOptions)
+		formatter := chromahtml.New(chromaFormatterOptions...)
+		_ = formatter.Format(w, style, iterator) == nil
+	} else {
+		_, _ = w.WriteString("<pre><code>")
+		r.Writer.RawWrite(w, buffer.Bytes())
 		_, _ = w.WriteString("</code></pre>\n")
 	}
 	return ast.WalkContinue, nil
